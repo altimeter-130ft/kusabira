@@ -3,7 +3,7 @@
 //
 
 //
-// Copyright 2023 Seigo Tanimura <seigo.tanimura@gmail.com>
+// Copyright 2023 Seigo Tanimura <seigo.tanimura@gmail.com> and contributors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@
 //
 // MIT License
 //
-// Copyright (c) 2023 Seigo Tanimura <seigo.tanimura@gmail.com>
+// Copyright (c) 2023 Seigo Tanimura <seigo.tanimura@gmail.com> and contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -44,15 +44,15 @@
 
 //!
 //! # Introduction
-//! [`kusabira`](crate) is the integrated C source build frontend for the
-//! [`Cargo`](https://doc.rust-lang.org/cargo/)
+//! [`kusabira`](crate) is the integrated C/C++/assembly source build frontend
+//! for the [`Cargo`](https://doc.rust-lang.org/cargo/)
 //! [build script](https://doc.rust-lang.org/cargo/reference/build-scripts.html).
 //!
 //! # Features
-//! * Integrated C library building by [`cc`] and
+//! * Integrated C/C++/assembly building by [`cc`] and
 //!   [Rust FFI](https://doc.rust-lang.org/nomicon/ffi.html) binding generation
 //!   by [`bindgen`] as the backends.
-//! * Multiple C source and header files with the glob support by [`glob`].
+//! * Multiple source and header files with the glob support by [`glob`].
 //! * Single-line configuration and build execution.
 //! * Cooperation with [`system_deps`] to integrate the system libraries.
 //! * [`Cargo`](https://doc.rust-lang.org/cargo/) metadata output to
@@ -112,7 +112,7 @@
 //!    > garden and messing up the scenary, asks a priest for the prayer to
 //!    > drive them away.  The priest accepts the request and sets on the work.
 //!    > After a seeming success, the fungi grow up even worse and get the
-//!    > priest into a trouble.  Finally, _himetake(姫菌)_, the queen fungi
+//!    > priest into a trouble.  Finally, _himetake(姫菌)_, the queen fungi,
 //!    > appears and blows up her big mushroom, driving away the garden owner
 //!    > and priest.
 //!

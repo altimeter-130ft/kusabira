@@ -3,7 +3,7 @@
 //
 
 //
-// Copyright 2023 Seigo Tanimura <seigo.tanimura@gmail.com>
+// Copyright 2023 Seigo Tanimura <seigo.tanimura@gmail.com> and contributors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@
 //
 // MIT License
 //
-// Copyright (c) 2023 Seigo Tanimura <seigo.tanimura@gmail.com>
+// Copyright (c) 2023 Seigo Tanimura <seigo.tanimura@gmail.com> and contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -70,7 +70,7 @@ fn test_default_contents()
 	let config = Config::default();
 
 	assert_eq!(config.out_dir, out_dir);
-	assert_eq!(config.c_source_files.len(), 0);
+	assert_eq!(config.input_files.len(), 0);
 	assert!(config.lib_name.is_none());
 	// The ([`Config::cc_build_hook`],
 	// [`Config::bindgen_builder_hook`] and
@@ -97,66 +97,72 @@ fn test_out_dir()
 }
 
 #[test]
-fn test_c_source_file()
+fn test_source_file()
 {
-	let c_source_file = "hello_world_c_1_*.c";
+	let input_file = "hello_world_c_1_*.c";
 	let config = Config::default();
-	assert_eq!(config.c_source_files.len(), 0);
+	assert_eq!(config.input_files.len(), 0);
 
-	let config = config.c_source_file(c_source_file);
-	assert_eq!(config.c_source_files.len(), 1);
-	assert_c_source_files(&config, [c_source_file].into_iter());
+	let config = config.input_file(input_file);
+	assert_eq!(config.input_files.len(), 1);
+	assert_source_files(&config, [input_file].into_iter());
 }
 
 #[test]
-fn test_c_source_files()
+fn test_source_files()
 {
-	let c_source_files = ["hello_world_c_1_*.c", "hello_world_c_2_*.c"];
+	let input_file = [
+		"hello_world_c_1_*.c",
+		"hello_world_c_2_*.c",
+		];
 	let config = Config::default();
-	assert_eq!(config.c_source_files.len(), 0);
+	assert_eq!(config.input_files.len(), 0);
 
-	let config = config.c_source_files(c_source_files.into_iter());
-	assert_eq!(config.c_source_files.len(), c_source_files.len());
-	assert_c_source_files(&config, c_source_files.into_iter());
+	let config = config.input_files(input_file.into_iter());
+	assert_eq!(config.input_files.len(), input_file.len());
+	assert_source_files(&config, input_file.into_iter());
 }
 
 #[test]
-fn test_add_c_source_file()
+fn test_add_source_file()
 {
-	let c_header_file = "hello_world_c_exported.h";
-	let c_source_file = "hello_world_c_1_*.c";
+	let header_file = "hello_world_c_exported.h";
+	let input_file = "hello_world_c_1_*.c";
 	let config = Config::default()
-		.c_source_file(c_header_file);
-	assert_eq!(config.c_source_files.len(), 1);
+		.input_file(header_file);
+	assert_eq!(config.input_files.len(), 1);
 
-	let config = config.add_c_source_file(c_source_file);
-	assert_eq!(config.c_source_files.len(), 2);
-	assert_c_source_files(&config, [c_header_file].into_iter());
-	assert_c_source_files(&config, [c_source_file].into_iter());
+	let config = config.add_input_file(input_file);
+	assert_eq!(config.input_files.len(), 2);
+	assert_source_files(&config, [header_file].into_iter());
+	assert_source_files(&config, [input_file].into_iter());
 }
 
 #[test]
-fn test_add_c_source_files()
+fn test_add_source_files()
 {
-	let c_header_file = "hello_world_c_exported.h";
-	let c_source_files = ["hello_world_c_1_*.c", "hello_world_c_2_*.c"];
+	let header_file = "hello_world_c_exported.h";
+	let input_files = [
+		"hello_world_c_1_*.c",
+		"hello_world_c_2_*.c"
+	];
 	let config = Config::default()
-		.c_source_file(c_header_file);
-	assert_eq!(config.c_source_files.len(), 1);
+		.input_file(header_file);
+	assert_eq!(config.input_files.len(), 1);
 
-	let config = config.add_c_source_files(c_source_files.into_iter());
-	assert_eq!(config.c_source_files.len(), 1 + c_source_files.len());
-	assert_c_source_files(&config, [c_header_file].into_iter());
-	assert_c_source_files(&config, c_source_files.into_iter());
+	let config = config.add_input_files(input_files.into_iter());
+	assert_eq!(config.input_files.len(), 1 + input_files.len());
+	assert_source_files(&config, [header_file].into_iter());
+	assert_source_files(&config, input_files.into_iter());
 }
 
-fn assert_c_source_files<'a, IT>(config: &Config, fn_iter: IT)
+fn assert_source_files<'a, IT>(config: &Config, fn_iter: IT)
 where IT: Iterator<Item = &'a str>
 {
 	for filename in fn_iter {
 		assert_eq!(
 			config
-			.c_source_files.iter()
+			.input_files.iter()
 			.filter(|config_fn|
 			{
 				*config_fn == &filename
@@ -172,6 +178,15 @@ fn test_lib_name()
 	let config = Config::default()
 		.lib_name(lib_name);
 	assert_eq!(config.lib_name, Some(lib_name));
+}
+
+#[test]
+fn test_binding_ext()
+{
+	let binding_ext = "rs";
+	let config = Config::default()
+		.binding_ext(binding_ext);
+	assert_eq!(config.binding_ext, binding_ext);
 }
 
 // The hook configuration methods are not covered as their own unit tests;
@@ -207,13 +222,13 @@ fn test_build_success_simple()
 
 	(config, out_dir) = test_build_setup(config, true);
 
-	config = config.c_source_file("src/**/*.[ch]");
+	config = config.input_file("src/**/*.[ch]");
 	let result = config.build();
 	let build_results = result.expect("build MUST succeed");
 	assert_eq!(build_results.out_dir, out_dir);
 	assert_eq!(build_results.lib_name, Some("hello_world".to_string()));
-	assert_eq!(build_results.c_source_files.len(), 6);
-	assert_eq!(build_results.c_header_rust_binding_files.len(), 2);
+	assert_eq!(build_results.source_files.len(), 6);
+	assert_eq!(build_results.header_bindings.len(), 2);
 }
 
 #[test]
@@ -227,7 +242,7 @@ fn test_build_success_with_hooks()
 
 	(config, out_dir) = test_build_setup(config, true);
 
-	config = config.c_source_file("src/**/*.[ch]")
+	config = config.input_file("src/**/*.[ch]")
 		.cc_build_hook(warnings_into_errors)
 		.add_cc_build_hook(|build| {build.std("c11")})
 		.bindgen_builder_hook(|builder| {builder.generate_block(true)})
@@ -242,8 +257,8 @@ fn test_build_success_with_hooks()
 	let build_results = result.expect("build MUST succeed");
 	assert_eq!(build_results.out_dir, out_dir);
 	assert_eq!(build_results.lib_name, Some("hello_world".to_string()));
-	assert_eq!(build_results.c_source_files.len(), 6);
-	assert_eq!(build_results.c_header_rust_binding_files.len(), 2);
+	assert_eq!(build_results.source_files.len(), 6);
+	assert_eq!(build_results.header_bindings.len(), 2);
 }
 
 #[test]
@@ -254,7 +269,7 @@ fn test_build_fail_out_dir_not_dir()
 
 	(config, _out_dir) = test_build_setup(config, true);
 
-	config = config.c_source_file("src/**/*.[ch]");
+	config = config.input_file("src/**/*.[ch]");
 	config.out_dir.is_dir = false;
 	let result = config.build();
 	assert!(result.is_err());
@@ -270,7 +285,7 @@ fn test_build_fail_nothing_built()
 
 	(config, _out_dir) = test_build_setup(config, true);
 
-	config = config.c_source_file("nonexist/**/*.[ch]");
+	config = config.input_file("nonexist/**/*.[ch]");
 	let result = config.build();
 	assert!(result.is_err());
 	assert_eq!(discriminant(&(result.err().expect("MUST be error"))),
@@ -285,7 +300,7 @@ fn test_build_fail_no_lib_name()
 
 	(config, _out_dir) = test_build_setup(config, false);
 
-	config = config.c_source_file("src/**/*.[ch]");
+	config = config.input_file("src/**/*.[ch]");
 	let result = config.build();
 	assert!(result.is_err());
 	assert_eq!(discriminant(&(result.err().expect("MUST be error"))),
@@ -300,13 +315,63 @@ fn test_build_success_c_only()
 
 	(config, out_dir) = test_build_setup(config, true);
 
-	config = config.c_source_file("src/**/*.c");
+	config = config.input_file("src/**/*.c");
 	let result = config.build();
 	let build_results = result.expect("build MUST succeed");
 	assert_eq!(build_results.out_dir, out_dir);
 	assert_eq!(build_results.lib_name, Some("hello_world".to_string()));
-	assert_eq!(build_results.c_source_files.len(), 6);
-	assert_eq!(build_results.c_header_rust_binding_files.len(), 0);
+	assert_eq!(build_results.source_files.len(), 6);
+	assert_eq!(build_results.header_bindings.len(), 0);
+}
+
+#[test]
+fn test_build_success_cc_only()
+{
+	let mut config = Config::default();
+	let out_dir;
+
+	(config, out_dir) = test_build_setup(config, true);
+
+	config = config.input_file("src/**/*.cc");
+	let result = config.build();
+	let build_results = result.expect("build MUST succeed");
+	assert_eq!(build_results.out_dir, out_dir);
+	assert_eq!(build_results.lib_name, Some("hello_world".to_string()));
+	assert_eq!(build_results.source_files.len(), 2);
+	assert_eq!(build_results.header_bindings.len(), 0);
+}
+
+#[test]
+fn test_build_fail_cc_source_ext_deleted()
+{
+	let mut config = Config::default();
+	let _out_dir;
+
+	(config, _out_dir) = test_build_setup(config, true);
+
+	config = config.input_file("src/**/*.cc")
+		.delete_source_ext("cc");
+	let result = config.build();
+	assert!(result.is_err());
+	assert_eq!(discriminant(&(result.err().expect("MUST be error"))),
+		discriminant(&MldError::MessageError("".to_string())));
+}
+
+#[test]
+fn test_build_fail_cc_source_ext_deleted_double()
+{
+	let mut config = Config::default();
+	let _out_dir;
+
+	(config, _out_dir) = test_build_setup(config, true);
+
+	config = config.input_file("src/**/*.cc")
+		.delete_source_ext("cc")
+		.delete_source_ext("cc");
+	let result = config.build();
+	assert!(result.is_err());
+	assert_eq!(discriminant(&(result.err().expect("MUST be error"))),
+		discriminant(&MldError::MessageError("".to_string())));
 }
 
 #[test]
@@ -317,28 +382,182 @@ fn test_build_success_h_only()
 
 	(config, out_dir) = test_build_setup(config, true);
 
-	config = config.c_source_file("src/**/*.h");
+	config = config.input_file("src/**/*.h");
 	let result = config.build();
 	let build_results = result.expect("build MUST succeed");
 	assert_eq!(build_results.out_dir, out_dir);
 	assert!(build_results.lib_name.is_none());
-	assert_eq!(build_results.c_source_files.len(), 0);
-	assert_eq!(build_results.c_header_rust_binding_files.len(), 2);
+	assert_eq!(build_results.source_files.len(), 0);
+	assert_eq!(build_results.header_bindings.len(), 2);
 }
 
 #[test]
-fn test_build_fail_non_c_sources()
+fn test_build_success_hh_only()
+{
+	let mut config = Config::default();
+	let out_dir;
+
+	(config, out_dir) = test_build_setup(config, true);
+
+	config = config.input_file("src/**/*.hh");
+	let result = config.build();
+	let build_results = result.expect("build MUST succeed");
+	assert_eq!(build_results.out_dir, out_dir);
+	assert!(build_results.lib_name.is_none());
+	assert_eq!(build_results.source_files.len(), 0);
+	assert_eq!(build_results.header_bindings.len(), 1);
+}
+
+#[test]
+fn test_build_fail_hh_header_ext_deleted()
 {
 	let mut config = Config::default();
 	let _out_dir;
 
 	(config, _out_dir) = test_build_setup(config, true);
 
-	config = config.c_source_file("src/**/*_non_c_*");
+	config = config.input_file("src/**/*.hh")
+		.delete_header_ext("hh");
 	let result = config.build();
 	assert!(result.is_err());
 	assert_eq!(discriminant(&(result.err().expect("MUST be error"))),
 		discriminant(&MldError::MessageError("".to_string())));
+}
+
+#[test]
+fn test_build_fail_hh_header_ext_deleted_double()
+{
+	let mut config = Config::default();
+	let _out_dir;
+
+	(config, _out_dir) = test_build_setup(config, true);
+
+	config = config.input_file("src/**/*.hh")
+		.delete_header_ext("hh")
+		.delete_header_ext("hh");
+	let result = config.build();
+	assert!(result.is_err());
+	assert_eq!(discriminant(&(result.err().expect("MUST be error"))),
+		discriminant(&MldError::MessageError("".to_string())));
+}
+
+#[test]
+fn test_build_fail_unsupported_exts()
+{
+	let mut config = Config::default();
+	let _out_dir;
+
+	(config, _out_dir) = test_build_setup(config, true);
+
+	config = config.input_file("src/**/*_non_c_*");
+	let result = config.build();
+	assert!(result.is_err());
+	assert_eq!(discriminant(&(result.err().expect("MUST be error"))),
+		discriminant(&MldError::MessageError("".to_string())));
+}
+
+#[test]
+fn test_build_fail_txt_unsupported()
+{
+	let mut config = Config::default();
+	let _out_dir;
+
+	(config, _out_dir) = test_build_setup(config, true);
+
+	config = config.input_file("src/**/*.txt");
+	let result = config.build();
+	assert!(result.is_err());
+	assert_eq!(discriminant(&(result.err().expect("MUST be error"))),
+		discriminant(&MldError::MessageError("".to_string())));
+}
+
+#[test]
+fn test_build_success_txt_source_ext_added()
+{
+	let mut config = Config::default();
+	let out_dir;
+
+	(config, out_dir) = test_build_setup(config, true);
+
+	config = config.input_file("src/**/*.txt")
+		.add_source_ext("txt");
+	let result = config.build();
+	let build_results = result.expect("build MUST succeed");
+	assert_eq!(build_results.out_dir, out_dir);
+	assert_eq!(build_results.lib_name, Some("hello_world".to_string()));
+	assert_eq!(build_results.source_files.len(), 2);
+	assert_eq!(build_results.header_bindings.len(), 0);
+}
+
+#[test]
+fn test_build_success_txt_source_ext_added_double()
+{
+	let mut config = Config::default();
+	let out_dir;
+
+	(config, out_dir) = test_build_setup(config, true);
+
+	config = config.input_file("src/**/*.txt")
+		.add_source_ext("txt")
+		.add_source_ext("txt");
+	let result = config.build();
+	let build_results = result.expect("build MUST succeed");
+	assert_eq!(build_results.out_dir, out_dir);
+	assert_eq!(build_results.lib_name, Some("hello_world".to_string()));
+	assert_eq!(build_results.source_files.len(), 2);
+	assert_eq!(build_results.header_bindings.len(), 0);
+}
+
+#[test]
+fn test_build_fail_in_unsupported()
+{
+	let mut config = Config::default();
+	let _out_dir;
+
+	(config, _out_dir) = test_build_setup(config, true);
+
+	config = config.input_file("src/**/*.in");
+	let result = config.build();
+	assert!(result.is_err());
+	assert_eq!(discriminant(&(result.err().expect("MUST be error"))),
+		discriminant(&MldError::MessageError("".to_string())));
+}
+
+#[test]
+fn test_build_success_in_source_ext_added()
+{
+	let mut config = Config::default();
+	let out_dir;
+
+	(config, out_dir) = test_build_setup(config, true);
+
+	config = config.input_file("src/**/*.in")
+		.add_header_ext("in");
+	let result = config.build();
+	let build_results = result.expect("build MUST succeed");
+	assert_eq!(build_results.out_dir, out_dir);
+	assert!(build_results.lib_name.is_none());
+	assert_eq!(build_results.source_files.len(), 0);
+	assert_eq!(build_results.header_bindings.len(), 1);
+}
+
+#[test]
+fn test_build_success_in_source_ext_added_double()
+{
+	let mut config = Config::default();
+	let out_dir;
+
+	(config, out_dir) = test_build_setup(config, true);
+
+	config = config.input_file("src/**/*.in")
+		.add_header_ext("in")
+		.add_header_ext("in");
+	let result = config.build();
+	let build_results = result.expect("build MUST succeed");
+	assert_eq!(build_results.out_dir, out_dir);
+	assert!(build_results.lib_name.is_none());
+	assert_eq!(build_results.source_files.len(), 0);
+	assert_eq!(build_results.header_bindings.len(), 1);
 }
 
 #[test]
@@ -353,7 +572,7 @@ fn test_build_fail_cc_build_error()
 
 	(config, _out_dir) = test_build_setup(config, true);
 
-	config = config.c_source_file("src/**/*.[ch]");
+	config = config.input_file("src/**/*.[ch]");
 	cc_build_ctx.emulate_error_set(true);
 	let result = config.build();
 	assert!(result.is_err());
@@ -378,7 +597,7 @@ fn test_build_fail_bindgen_build_generate_error()
 
 	(config, _out_dir) = test_build_setup(config, true);
 
-	config = config.c_source_file("src/**/*.[ch]");
+	config = config.input_file("src/**/*.[ch]");
 	bindgen_builder_ctx.emulate_generate_error_set(true);
 	let result = config.build();
 	assert!(result.is_err());
@@ -400,7 +619,7 @@ fn test_build_fail_bindgen_build_write_error()
 
 	(config, _out_dir) = test_build_setup(config, true);
 
-	config = config.c_source_file("src/**/*.[ch]");
+	config = config.input_file("src/**/*.[ch]");
 	bindgen_builder_ctx.emulate_write_error_set(true);
 	let result = config.build();
 	assert!(result.is_err());
@@ -418,7 +637,7 @@ fn test_build_fail_glob_pattern_error()
 
 	(config, _out_dir) = test_build_setup(config, true);
 
-	config = config.c_source_file("src/a**/*.[ch]");
+	config = config.input_file("src/a**/*.[ch]");
 	let result = config.build();
 	assert!(result.is_err());
 	let err = MldError::from(
@@ -432,9 +651,9 @@ fn test_build_fail_glob_pattern_error()
 #[test]
 fn test_header_binding()
 {
-	let header_binding = HeaderBinding::new(
+	let header_binding = HeaderBinding::from((
 		StdPathBuf::from("hello_world_c_exported.h".to_string()),
-		StdPathBuf::from("hello_world_c_exported.in".to_string()));
+		StdPathBuf::from("hello_world_c_exported.in".to_string())));
 
 	println!("header_binding = {}.", header_binding);
 	println!("header_binding = {:?}.", header_binding);
@@ -449,20 +668,24 @@ fn test_build_results()
 	println!("build_results (1) = {:?}.", build_results);
 
 	build_results.lib_name = Some("hello_world".to_string());
-	build_results.c_source_files =
+	build_results.source_files =
 	[
 		"hello_world_c_1.c",
 		"hello_world_c_2.c",
-	].into_iter().map(|x| {StdPathBuf::from(x.to_string())}).collect();
-	build_results.c_header_rust_binding_files =
+	].into_iter()
+		.map(|x| {StdPathBuf::from(x.to_string())})
+		.collect();
+	build_results.header_bindings =
 	[
-		HeaderBinding::new(
-			StdPathBuf::from("hello_world_c_exported_1.h".to_string()),
-			StdPathBuf::from("hello_world_c_exported_1.in".to_string())),
-		HeaderBinding::new(
-			StdPathBuf::from("hello_world_c_exported_2.h".to_string()),
-			StdPathBuf::from("hello_world_c_exported_2.in".to_string())),
-	].into_iter().collect();
+		("hello_world_c_exported_1.h", "hello_world_c_exported_1.in"),
+		("hello_world_c_exported_2.h", "hello_world_c_exported_2.in"),
+	].into_iter()
+		.map(|x| -> HeaderBinding
+		{
+			let paths = (StdPathBuf::from(x.0.to_string()),
+				StdPathBuf::from(x.1.to_string()));
+			HeaderBinding::from(paths)
+		}).collect();
 
 	println!("build_results (2) = {}.", build_results);
 	println!("build_results (2) = {:?}.", build_results);
@@ -472,42 +695,52 @@ fn test_build_results()
 }
 
 #[test]
-fn test_file_extension()
+fn test_file_type()
 {
-	let path_buf = StdPathBuf::from("hello_world_c_1.c".to_string());
+	let config = Config::default();
 
-	let ext = FileExtension::from(path_buf.as_path());
-	assert_eq!(ext, FileExtension::C);
-	println!("ext (1) = {}.", ext);
-	println!("ext (1) = {:?}.", ext);
+	for e in SOURCE_EXTS.iter() {
+		let path_buf = StdPathBuf::from("hello_world_c_1.".to_string() + e);
 
-	let path_buf = StdPathBuf::from("hello_world_c_1.h".to_string());
+		let ext = config.find_filetype(path_buf.extension());
+		assert_eq!(ext, FileType::Source);
+		println!("ext (1) = {}.", ext);
+		println!("ext (1) = {:?}.", ext);
+	}
 
-	let ext = FileExtension::from(path_buf.as_path());
-	assert_eq!(ext, FileExtension::H);
-	println!("ext (2) = {}.", ext);
-	println!("ext (2) = {:?}.", ext);
+	for e in HEADER_EXTS.iter() {
+		let path_buf = StdPathBuf::from("hello_world_c_1.".to_string() + e);
+
+		let ext = config.find_filetype(path_buf.extension());
+		assert_eq!(ext, FileType::Header);
+		println!("ext (2) = {}.", ext);
+		println!("ext (2) = {:?}.", ext);
+	}
 
 	let path_buf = StdPathBuf::from("hello_world_c_1.txt".to_string());
 
-	let ext = FileExtension::from(path_buf.as_path());
-	assert_eq!(ext, FileExtension::Unsupported("txt".to_string()));
+	let ext = config.find_filetype(path_buf.extension());
+	assert_eq!(ext, FileType::Unsupported("txt".to_string()));
 	println!("ext (3) = {}.", ext);
 	println!("ext (3) = {:?}.", ext);
 
-	let path_buf = StdPathBuf::from("hello_world_c_1".to_string());
+	let mut path_buf = StdPathBuf::from("hello_world_c_1".to_string());
 
-	let ext = FileExtension::from(path_buf.as_path());
-	assert_eq!(ext, FileExtension::Unsupported("".to_string()));
+	let ext = config.find_filetype(path_buf.extension());
+	assert_eq!(ext, FileType::Unsupported("".to_string()));
 	println!("ext (4) = {}.", ext);
 	println!("ext (4) = {:?}.", ext);
 
-	let ext = FileExtension::from(Some(invalid_path_str().as_ref()));
-	assert_eq!(ext, FileExtension::Unsupported("".to_string()));
+	path_buf.set_extension(invalid_path_str().as_os_str());
+
+	let ext = config.find_filetype(path_buf.extension());
+	assert_eq!(ext, FileType::Unsupported("".to_string()));
+	println!("ext (4) = {}.", ext);
+	println!("ext (4) = {:?}.", ext);
 }
 
 #[cfg(unix)]
-fn invalid_path_str() -> OsString
+pub fn invalid_path_str() -> OsString
 {
 	use std::os::unix::ffi::OsStrExt;
 
@@ -519,7 +752,7 @@ fn invalid_path_str() -> OsString
 }
 
 #[cfg(windows)]
-fn invalid_path_str() -> OsString
+pub fn invalid_path_str() -> OsString
 {
 	use std::os::windows::prelude::*;
 

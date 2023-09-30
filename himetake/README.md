@@ -1,7 +1,7 @@
 # Introduction
-`himetake` is the demo crate of `kusabira`.
+`himetake` is the demo crate of [`kusabira`](../kusabira).
 
-This crate is separate from `kusabira` because it is meant to be
+This crate is separate from [`kusabira`](../kusabira) because it is meant to be
 used by the build script of [`Cargo`](https://doc.rust-lang.org/cargo/),
 which cannot depend on its library crate by design.
 

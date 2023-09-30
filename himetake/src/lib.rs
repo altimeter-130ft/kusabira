@@ -3,7 +3,7 @@
 //
 
 //
-// Copyright 2023 Seigo Tanimura <seigo.tanimura@gmail.com>
+// Copyright 2023 Seigo Tanimura <seigo.tanimura@gmail.com> and contributors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@
 //
 // MIT License
 //
-// Copyright (c) 2023 Seigo Tanimura <seigo.tanimura@gmail.com>
+// Copyright (c) 2023 Seigo Tanimura <seigo.tanimura@gmail.com> and contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -65,6 +65,14 @@
 //! ([`IETF RFC2119`](https://datatracker.ietf.org/doc/html/rfc2119),
 //! [`IETF RFC8174`](https://datatracker.ietf.org/doc/html/rfc8174))
 //! when, and only when, they appear in all capitals, as shown here.
+//!
+//! # Dependency
+//! * `libcw` version 7.x.x of
+//!   [`unixcw`](https://sourceforge.net/projects/unixcw/).
+//!
+//!   Required as the system library integrated into the demo binary.
+//!
+//!   No need to worry, the demo does not actually transmit anything.
 //!
 //! # License
 //! The terms "Licensor", "You", "Your", "Work", "Contribution" and

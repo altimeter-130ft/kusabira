@@ -3,7 +3,7 @@
 //
 
 //
-// Copyright 2023 Seigo Tanimura <seigo.tanimura@gmail.com>
+// Copyright 2023 Seigo Tanimura <seigo.tanimura@gmail.com> and contributors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@
 //
 // MIT License
 //
-// Copyright (c) 2023 Seigo Tanimura <seigo.tanimura@gmail.com>
+// Copyright (c) 2023 Seigo Tanimura <seigo.tanimura@gmail.com> and contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -262,10 +262,23 @@ pub fn test_glob_with_setup(glob_ctx: &mut GlobContextAccess)
 		"src/sub/hello_world_c_4.c",
 		"src/hello_world_C_5.c",
 		"src/hello_world_C_6.c",
+		"src/hello_world_cc_7.cc",
+		"src/hello_world_cc_8.cc",
+		"src/hello_world_cpp_9.cpp",
+		"src/hello_world_cpp_10.cpp",
+		"src/hello_world_cxx_11.cxx",
+		"src/hello_world_cxx_12.cxx",
+		"src/hello_world_s_13.s",
+		"src/hello_world_s_14.s",
 		"src/hello_world_export_to_rust.h",
 		"src/sub/hello_world_internal.h",
+		"src/sub/hello_world_internal_hh.hh",
+		"src/sub/hello_world_internal_hpp.hpp",
+		"src/sub/hello_world_internal_hxx.hxx",
 		"src/hello_world_non_c_101",
 		"src/hello_world_non_c_102.txt",
+		"src/hello_world_non_c_103.txt",
+		"src/hello_world_non_c_104.in",
 		"tests/hello_world_c_7.c",
 		"tests/hello_world_c_8.c",
 		"tests/sub/hello_world_tests.h",

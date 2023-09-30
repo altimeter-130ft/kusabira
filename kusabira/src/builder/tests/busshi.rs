@@ -3,7 +3,7 @@
 //
 
 //
-// Copyright 2023 Seigo Tanimura <seigo.tanimura@gmail.com>
+// Copyright 2023 Seigo Tanimura <seigo.tanimura@gmail.com> and contributors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@
 //
 // MIT License
 //
-// Copyright (c) 2023 Seigo Tanimura <seigo.tanimura@gmail.com>
+// Copyright (c) 2023 Seigo Tanimura <seigo.tanimura@gmail.com> and contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -41,6 +41,24 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //
+
+//!
+//! The module for the mocks used in the unit tests.
+//!
+//! # Informational Definitions
+//! ## Busshi (仏師), _noun_, _Japanese_
+//! 1. An artist of the Budda statue.
+//! 2. A play of [Kyogen(狂言)](https://en.wikipedia.org/wiki/Ky%C5%8Dgen) with
+//!    the following plot:
+//!
+//!    > A mischievous man, disguising as a _busshi_, receives the order of a
+//!    > brand-new Budda statue from an innocent customer.  Having no
+//!    > skills to carve at all, the _busshi_ attempts to disguise himself
+//!    > as the statue.  The customer then comes to the _busshi_ to pick up the
+//!    > ordered statue.  The _busshi_ receives the customer and presents the
+//!    > disguised statue in turn, until the _busshi_ misses the disguise in
+//!    > haste and the customer drives him away.
+//!
 
 pub mod bindgen_builder;
 pub mod cc_build;

@@ -3,7 +3,7 @@
 //
 
 //
-// Copyright 2023 Seigo Tanimura <seigo.tanimura@gmail.com>
+// Copyright 2023 Seigo Tanimura <seigo.tanimura@gmail.com> and contributors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@
 //
 // MIT License
 //
-// Copyright (c) 2023 Seigo Tanimura <seigo.tanimura@gmail.com>
+// Copyright (c) 2023 Seigo Tanimura <seigo.tanimura@gmail.com> and contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -61,8 +61,8 @@ fn main() -> Result<(), MainError>
 {
 	MldBuilderConfig::default()
 		.lib_name("hello_world_c")
-		.c_source_file("src/hello_world_export_to_rust.h")
-		.add_c_source_files([
+		.input_file("src/hello_world_export_to_rust.h")
+		.add_input_files([
 			"src/hello_world_c_*.c",
 			"src/unixcw_libcw_demo.c"]
 			.into_iter())

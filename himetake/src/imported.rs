@@ -3,7 +3,7 @@
 //
 
 //
-// Copyright 2023 Seigo Tanimura <seigo.tanimura@gmail.com>
+// Copyright 2023 Seigo Tanimura <seigo.tanimura@gmail.com> and contributors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@
 //
 // MIT License
 //
-// Copyright (c) 2023 Seigo Tanimura <seigo.tanimura@gmail.com>
+// Copyright (c) 2023 Seigo Tanimura <seigo.tanimura@gmail.com> and contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -48,8 +48,10 @@
 //! and included into this module are under the license of each software from
 //! which the included Rust items originate.
 //!
-//! Such the Rust items SHOULD NOT be regarded as the Derivative Works of the
-//! originating third-party software, unless expressed otherwise.
+//! Such the Rust items SHALL NOT be regarded as the Derivative Works of the
+//! originating third-party software, unless expressed otherwise.  This
+//! treatment aligns with the _Derivative Works_ definition in _1. Definitions_
+//! of [Apache License Version 2.0](https://www.apache.org/licenses/LICENSE-2.0).
 //!
 //! # Practice Guide
 //! Contrary to the very limited number of the imported items from the C

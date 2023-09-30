@@ -3,7 +3,7 @@
 //
 
 //
-// Copyright 2023 Seigo Tanimura <seigo.tanimura@gmail.com>
+// Copyright 2023 Seigo Tanimura <seigo.tanimura@gmail.com> and contributors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@
 //
 // MIT License
 //
-// Copyright (c) 2023 Seigo Tanimura <seigo.tanimura@gmail.com>
+// Copyright (c) 2023 Seigo Tanimura <seigo.tanimura@gmail.com> and contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -47,8 +47,9 @@
 //! default parameters by [`builder::Config::default`].
 //!
 //! The builder is then configured by the methods on [`builder::Config`].  Both
-//! the C source files (`*.c`) and header files (`*.h`) can be configured
-//! together.  At least one C source or header file MUST be configured.
+//! the source files (`*.c`, `*.cc`, `*.s`, ...) and header files
+//! (`*.h`, `*.hh`, ...) can be configured together as the input files.  At
+//! least one input file MUST be configured, either source or header.
 //!
 //! The backends can also be configured via [`builder::Config`].  In order to
 //! make the [`kusabira`](crate) API robust against the changes on the backend
@@ -57,62 +58,74 @@
 //! configuration, modifies it and returns it.
 //!
 //! Finally, the builder is executed by [`builder::Config::build`], which
-//! builds the library and Rust binding files altogether.
-//! [`builder::Config::build`] checks the extention of each C source file;
-//! the `*.c` files are passed together to [`cc::Build::try_compile`] to build
-//! a single library, while the `*.h` files are passed in the one-by-one manner
-//! to [`bindgen::Builder::generate`] and [`bindgen::Bindings::write_to_file`].
-//! Both of these behaviors reflect the API design of the backends.
+//! builds the library and
+//! [Rust FFI](https://doc.rust-lang.org/nomicon/ffi.html) binding files
+//! altogether.  [`builder::Config::build`] checks the extention of each input
+//! file; the source files are passed together to [`cc::Build::try_compile`] to
+//! build a single library, while the header files are passed in the one-by-one
+//! manner to [`bindgen::Builder::generate`] and
+//! [`bindgen::Bindings::write_to_file`].  Both of these behaviors reflect the
+//! usage design of the backends.
 //!
-//! The glob expansion by [`glob`] is supported on the C source files.  This
-//! happens during the execution of [`builder::Config::build`].
+//! The glob expansion by [`glob`] is supported on the input files.  The glob
+//! expansion happens during the execution of [`builder::Config::build`].
 //!
-//! # RECOMMENDED C Source File Configurtion
-//! * C source files (`*.c`)
+//! All of the input files discovered by [`builder::Config::build`] are
+//! reported to [`Cargo`](https://doc.rust-lang.org/cargo/) by
+//! [`cargo:rerun-if-changed`](https://doc.rust-lang.org/cargo/reference/build-scripts.html#rerun-if-changed),
+//! so that an update on any input files trigger the rebuild.  This includes
+//! the recursively included header files found by
+//! [`bindgen::Builder::generate`].
 //!
-//!   Configure all of them together, possibly by the glob.  They are all
-//!   compiled into a single library, which is then linked automatically with
-//!   the Rust object files by [`Cargo`](https://doc.rust-lang.org/cargo/).
+//! # RECOMMENDED Input File Configuration
+//! ## Source files
+//! Configure all of them together, possibly by the glob.  They are all
+//! compiled into a single library, which is then reported to
+//! [`Cargo`](https://doc.rust-lang.org/cargo/) by [`builder::Config::build`]
+//! for linking.
 //!
-//! * C header files (`*.h`)
+//! ## Header files
+//! Create a single header file that `#include`s all of the header files
+//! exported to Rust.  Configure only this header file to [`builder::Config`].
+//! On the Rust side, [`include!`](std::include) the generated binding file
+//! into a Rust source file.  Each binding file has the same filename as the
+//! configured header file except that the extention is replaced by the one
+//! configured by [`builder::Config::binding_ext`], or
+//! [`builder::RUST_FFI_BINDING_EXT`] by default.
 //!
-//!   Create a single C header file that `#include`s all of the C header files
-//!   exported to the Rust source files.  Configure only this C header file to
-//!   [`builder::Config`].  On the Rust side, `include!` the generated binding
-//!   file in a source file.
+//! This configuration is recommended because [`bindgen::Builder::generate`]
+//! requires a header file completely pre-processable and compilable on its
+//! own, while most header files depend on some other header files
+//! `#include`d before them.
 //!
-//!   This configuration is recommended because
-//!   [`bindgen::Builder::generate`] requires a C header file completely
-//!   pre-processable and compilable on its own, while most C header files
-//!   assume some other header files `#include`d before them.
+//! Mind that the identifier scope of Rust is different from C/C++/assembly.
+//! In Rust, you [`include!`](std::include) a binding file somewhere in a
+//! module, and all of the identifiers in it are visible anywhere in the
+//! module.
 //!
-//!   Mind that the identifier scope of Rust is different from C.  In Rust, you
-//!   `include!` a binding file somewhere in a module, and the identifiers in
-//!   it are visible anywhere in the module.
+//! Also note that the generated binding file SHOULD NOT be compiled directly.
+//! [`rustc`](https://doc.rust-lang.org/rustc/) assumes the certain source file
+//! hierarchy to define the modules, which requires some tricks to follow.  In
+//! addition, [`Cargo`](https://doc.rust-lang.org/cargo/) may exhibit an error
+//! or unexpected behavior if the build script emits any files into the source
+//! directory.
 //!
-//!   Also note that the generated binding file SHOULD NOT be compiled
-//!   directly.  [`rustc`](https://doc.rust-lang.org/rustc/) assumes the
-//!   certain source file hierarchy to define the modules, which requires some
-//!   tricks to follow.  In addition,
-//!   [`Cargo`](https://doc.rust-lang.org/cargo/) may exhibit an unexpected
-//!   behavior if the build script emits any files into the source directory.
+//! A good practice in a large-scaled project is to [`include!`](std::include)
+//! the binding file into a dedicated module, and `use` the required items only
+//! to avoid flooding a module by many unused identifiers.  As of version
+//! 0.68.1, [`bindgen`] adds `pub` to every bound identifier.
 //!
-//!   A good practice in a large-scaled project is to `include!` the binding
-//!   file into a dedicated module, and `use` the required items only to avoid
-//!   flooding a module by many unused identifiers.  As of version 0.68.1,
-//!   [`bindgen`] adds `pub` to every bound identifier.
-//!
-//!   Alternatively, you can also create multiple C header files and configure
-//!   all of them, as long as each header file pre-processes and compiles on
-//!   its own.  This is a good option if you multiple features implemented in
-//!   C and each Rust module does not require all C features.
+//! Alternatively, you can also create multiple header files and configure all
+//! of them, as long as each header file pre-processes and compiles on its own.
+//! This is a good option if you have multiple features to import and each Rust
+//! module does not require all imported features.
 //!
 //! # Internal Design Notes
 //! ## Path Storage
 //! The output directory is stored as [`std::path::PathBuf`] because it MUST
 //! point to a valid directory path upon building.
 //!
-//! In contrary, the C source glob patterns are represented by
+//! In contrary, the source file glob patterns are represented by
 //! [`std::string::String`].  A glob pattern do not necessarily have to be a
 //! valid path, so [`std::path::PathBuf`] is too restrictive.  [`glob`] deals
 //! with a pattern in the same way.
@@ -208,6 +221,33 @@ pub mod tests;
 /// configures the output directory.
 pub static ENV_KEY_OUT_DIR: &str = "OUT_DIR";
 
+/// The default path extensions for the source files passed to [`cc::Build`].
+pub static SOURCE_EXTS: [&str; 5] =
+[
+	"c",
+	"cc",
+	"cpp",
+	"cxx",
+	"s",
+];
+
+/// The default path extensions for the header files passed to
+/// [`bindgen::Builder::generate`].
+pub static HEADER_EXTS: [&str; 4] =
+[
+	"h",
+	"hh",
+	"hpp",
+	"hxx",
+];
+
+/// The default extension of the
+/// [Rust FFI](https://doc.rust-lang.org/nomicon/ffi.html) binding file.
+///
+/// This is changed from `rs` so that the binding file is not mixed up with
+/// the true Rust source files.
+pub static RUST_FFI_BINDING_EXT: &str = "in";
+
 ///
 /// The configuration parameters, as well as the entry to the builder engine.
 ///
@@ -217,8 +257,11 @@ pub static ENV_KEY_OUT_DIR: &str = "OUT_DIR";
 pub struct Config<'a>
 {
 	out_dir: PathBuf,
-	c_source_files: Vec<&'a str>,
+	input_files: Vec<&'a str>,
 	lib_name: Option<&'a str>,
+	cc_exts: Vec<String>,
+	bindgen_exts: Vec<String>,
+	binding_ext: &'a str,
 	cc_build_hook: RefCell<Box<dyn FnOnce(&mut Build) -> &mut Build + 'a>>,
 	bindgen_builder_hook: RefCell<Box<dyn FnMut(Builder) -> Builder + 'a>>,
 	glob_matchoptions_hook: RefCell<Box<dyn FnOnce(MatchOptions) -> MatchOptions + 'a>>,
@@ -232,8 +275,11 @@ impl<'a> Default for Config<'a>
 	/// # Default Parameters
 	/// * *Output Directory*: The value of environment variable `OUT_DIR` if
 	///    defined, the current directory (`.`) otherwise.
-	/// * *C Source Files*: None.
+	/// * *Input Files*: None.
 	/// * *Library Name*: None.
+	/// * *Source File Extensions*: As defined in [`SOURCE_EXTS`].
+	/// * *Header File Extensions*: As defined in [`HEADER_EXTS`].
+	/// * *Binding File Extension*: As defined in [`RUST_FFI_BINDING_EXT`].
 	/// * *[`cc::Build`] Configuration Hook*: [`super::hooks::cc::reflect`].
 	/// * *[`bindgen::Builder`] Configuration Hook*: [`super::hooks::bindgen::reflect`].
 	/// * *[`glob::MatchOptions`] Configuration Hook*: [`super::hooks::glob::reflect`].
@@ -248,9 +294,15 @@ impl<'a> Default for Config<'a>
 	fn default() -> Config<'a>
 	{
 		Config {
-			out_dir: PathBuf::from(env::var(&ENV_KEY_OUT_DIR).unwrap_or(".".to_string())),
-			c_source_files: Vec::new(),
+			out_dir: PathBuf::from(
+				env::var(&ENV_KEY_OUT_DIR).unwrap_or(".".to_string())),
+			input_files: Vec::new(),
 			lib_name: None,
+			cc_exts: SOURCE_EXTS
+				.iter().map(|&x| {String::from(x)}).collect(),
+			bindgen_exts: HEADER_EXTS
+				.iter().map(|&x| {String::from(x)}).collect(),
+			binding_ext: RUST_FFI_BINDING_EXT,
 			cc_build_hook: RefCell::new(Box::new(reflect_cc)),
 			bindgen_builder_hook: RefCell::new(Box::new(reflect_bindgen)),
 			glob_matchoptions_hook: RefCell::new(Box::new(reflect_glob)),
@@ -293,95 +345,95 @@ impl<'a> Config<'a>
 	}
 
 	///
-	/// Set a single C source file.
+	/// Set a single input file.
 	///
 	/// The filename MAY be a [`glob`] pattern.
 	///
-	/// Any existing C source files are removed from the configuration.
+	/// Any existing input files are removed from the configuration.
 	///
 	/// # Example
 	/// ```
 	/// use kusabira::builder::Config;
 	///
 	/// let config = Config::default()
-	/// 	.c_source_file("hello_world_c_*.c");
+	/// 	.input_file("hello_world_c_*.c");
 	/// ```
 	///
-	pub fn c_source_file(mut self, c_filename: &'a str) -> Self
+	pub fn input_file(mut self, filename: &'a str) -> Self
 	{
-		self.c_source_files.clear();
-		self.add_c_source_file(c_filename)
+		self.input_files.clear();
+		self.add_input_file(filename)
 	}
 
 	///
-	/// Set either a single or multiple C source files via an iterator.
+	/// Set either a single or multiple input files via an iterator.
 	///
 	/// The filename MAY be a [`glob`] pattern.
 	///
-	/// Any existing C source files are removed from the configuration.
+	/// Any existing input files are removed from the configuration.
 	///
 	/// # Example
 	/// ```
 	/// use kusabira::builder::Config;
 	///
 	/// let config = Config::default()
-	/// 	.c_source_files(
+	/// 	.input_files(
 	/// 		["hello_world_c_1_*.c", "hello_world_c_2_*.c"]
 	/// 		.into_iter());
 	/// ```
 	///
-	pub fn c_source_files<IT>(mut self, c_filename_iter: IT) -> Self
+	pub fn input_files<IT>(mut self, filename_iter: IT) -> Self
 		where IT: Iterator<Item = &'a str>
 	{
-		self.c_source_files.clear();
-		self.add_c_source_files(c_filename_iter)
+		self.input_files.clear();
+		self.add_input_files(filename_iter)
 	}
 
 	///
-	/// Add a single C source file.
+	/// Add a single input file.
 	///
 	/// The filename MAY be a [`glob`] pattern.
 	///
-	/// Any existing C source files are preserved in the configuration.
+	/// Any existing input files are preserved in the configuration.
 	///
 	/// # Example
 	/// ```
 	/// use kusabira::builder::Config;
 	///
 	/// let config = Config::default()
-	/// 	.c_source_file("hello_world_c_exported.h")
-	/// 	.add_c_source_file("hello_world_c_*.c");
+	/// 	.input_file("hello_world_c_exported.h")
+	/// 	.add_input_file("hello_world_c_*.c");
 	/// ```
 	///
-	pub fn add_c_source_file(mut self, c_filename: &'a str) -> Self
+	pub fn add_input_file(mut self, filename: &'a str) -> Self
 	{
-		self.c_source_files.push(c_filename);
+		self.input_files.push(filename);
 		self
 	}
 
 	///
-	/// Add either a single or multiple C source files via an iterator.
+	/// Add either a single or multiple input files via an iterator.
 	///
 	/// The filename MAY be a [`glob`] pattern.
 	///
-	/// Any existing C source files are preserved in the configuration.
+	/// Any existing input files are preserved in the configuration.
 	///
 	/// # Example
 	/// ```
 	/// use kusabira::builder::Config;
 	///
 	/// let config = Config::default()
-	/// 	.c_source_file("hello_world_c_exported.h")
-	/// 	.add_c_source_files(
+	/// 	.input_file("hello_world_c_exported.h")
+	/// 	.add_input_files(
 	/// 		["hello_world_c_1_*.c", "hello_world_c_2_*.c"]
 	/// 		.into_iter());
 	/// ```
 	///
-	pub fn add_c_source_files<IT>(mut self, c_filename_iter: IT) -> Self
+	pub fn add_input_files<IT>(mut self, filename_iter: IT) -> Self
 		where IT: Iterator<Item = &'a str>
 	{
-		for c_filename in c_filename_iter {
-			self.c_source_files.push(c_filename);
+		for filename in filename_iter {
+			self.input_files.push(filename);
 		}
 		self
 	}
@@ -406,6 +458,120 @@ impl<'a> Config<'a>
 	pub fn lib_name(mut self, lib_name: &'a str) -> Self
 	{
 		self.lib_name = Some(lib_name);
+		self
+	}
+
+	///
+	/// Set the [Rust FFI](https://doc.rust-lang.org/nomicon/ffi.html) binding
+	/// file extension.
+	///
+	/// As of Oct 2023, there is no common extention for the Rust include file.
+	/// The example of [std::include] uses `in`, which is also the default,
+	/// while `rs` also makes a sense because an `include!`d file is a valid
+	/// Rust source file.
+	///
+	/// # Example
+	/// ```
+	/// use kusabira::builder::Config;
+	///
+	/// let binding_ext = "rs";
+	/// let config = Config::default()
+	/// 	.binding_ext(binding_ext);
+	/// ```
+	///
+	pub fn binding_ext(mut self, binding_ext: &'a str) -> Self
+	{
+		self.binding_ext = binding_ext;
+		self
+	}
+
+	///
+	/// Add a source file extention regarded as the input to [`cc::Build`].
+	///
+	/// If the extension is already added, it is not added again.
+	///
+	/// # Example
+	/// ```
+	/// use kusabira::builder::Config;
+	///
+	/// let source_ext = "i";
+	/// let config = Config::default()
+	/// 	.add_source_ext(source_ext);
+	/// ```
+	///
+	pub fn add_source_ext(mut self, ext: &str) -> Self
+	{
+		if self.cc_exts.iter().find(|&x| {x == ext}).is_none() {
+			self.cc_exts.push(ext.to_string());
+		}
+		self
+	}
+
+	///
+	/// Delete a source file extention regarded as the input to [`cc::Build`].
+	///
+	/// If the extension is not added, this method does nothing.
+	///
+	/// # Example
+	/// ```
+	/// use kusabira::builder::Config;
+	///
+	/// let source_ext = "cc";
+	/// let config = Config::default()
+	/// 	.delete_source_ext(source_ext);
+	/// ```
+	///
+	pub fn delete_source_ext(mut self, ext: &str) -> Self
+	{
+		if let Some(i) = self.cc_exts.iter().position(|x| {x == ext}) {
+			self.cc_exts.remove(i);
+		}
+		self
+	}
+
+	///
+	/// Add a header file extention regarded as the input to
+	/// [`bindgen::Builder::generate`].
+	///
+	/// If the extension is already added, it is not added again.
+	///
+	/// # Example
+	/// ```
+	/// use kusabira::builder::Config;
+	///
+	/// let header_ext = "hhh";
+	/// let config = Config::default()
+	/// 	.add_header_ext(header_ext);
+	/// ```
+	///
+	pub fn add_header_ext(mut self, ext: &str) -> Self
+	{
+		if self.bindgen_exts.iter().find(|&x| {x == ext}).is_none() {
+			self.bindgen_exts.push(ext.to_string());
+		}
+		self
+	}
+
+	///
+	/// Delete a header file extention regarded as the input to
+	/// [`bindgen::Builder::generate`].
+	///
+	/// If the extension is not added, this method does nothing.
+	///
+	/// # Example
+	/// ```
+	/// use kusabira::builder::Config;
+	///
+	/// let header_ext = "hh";
+	/// let config = Config::default()
+	/// 	.delete_header_ext(header_ext);
+	/// ```
+	///
+	pub fn delete_header_ext(mut self, ext: &str) -> Self
+	{
+		if let Some(i) = self.bindgen_exts.iter().position(|x| {x == ext}) {
+			self.bindgen_exts.remove(i);
+		}
 		self
 	}
 
@@ -750,8 +916,8 @@ impl<'a> Config<'a>
 	///
 	///	MldBuilderConfig::default()
 	/// 	.lib_name("hello_world_c")
-	/// 	.c_source_file("src/hello_world_export_to_rust.h")
-	/// 	.add_c_source_files([
+	/// 	.input_file("src/hello_world_export_to_rust.h")
+	/// 	.add_input_files([
 	/// 		"src/hello_world_c_*.c",
 	/// 		"src/unixcw_libcw_demo.c"]
 	/// 	.into_iter())
@@ -802,38 +968,35 @@ impl<'a> Config<'a>
 			.replace(Box::new(reflect_glob));
 		let glob_matchoptions = glob_matchoptions_hook_fn(glob_matchoptions);
 
-		let mut c_source_found = false;
-
-		for c_fn_glob in &self.c_source_files {
-			for c_source_pathbuf in glob_with(c_fn_glob, glob_matchoptions)?
+		for src_fn_glob in &self.input_files {
+			for src_fn_pathbuf in glob_with(src_fn_glob, glob_matchoptions)?
 				.filter_map(Result::ok) {
-				let c_filename = c_source_pathbuf
+				let src_filename = src_fn_pathbuf
 					.to_str()
 					.expect("globbed path MUST make a valid string");
 
-				let ext = FileExtension::from(c_source_pathbuf.as_path());
+				let ext = self.find_filetype(src_fn_pathbuf.extension());
 				match ext {
-					FileExtension::C | FileExtension::H => {
-						println!("cargo:rerun-if-changed={c_filename}");
+					FileType::Source | FileType::Header => {
+						println!("cargo:rerun-if-changed={src_filename}");
 					},
-					FileExtension::Unsupported(_) => {
-						eprintln!("Ignoring non-C-source file {c_filename}.");
+					FileType::Unsupported(_) => {
+						eprintln!("Ignoring non-source file {src_filename}.");
 					},
 				}
 				match ext {
-					FileExtension::C => {
-						c_source_found = true;
-						build.file(c_source_pathbuf.as_path());
-						results.c_source_files.push(c_source_pathbuf);
+					FileType::Source => {
+						build.file(src_fn_pathbuf.as_path());
+						results.source_files.push(src_fn_pathbuf);
 					},
-					FileExtension::H => {
+					FileType::Header => {
 						let mut binding_pathbuf = self.out_dir
 							.clone()
-							.join(c_source_pathbuf.file_name()
-								.expect("C source file PathBuf MUST make a valid string"));
-						binding_pathbuf.set_extension("in");
+							.join(src_fn_pathbuf.file_name()
+								.expect("source file PathBuf MUST make a valid string"));
+						binding_pathbuf.set_extension(self.binding_ext);
 						let builder = Builder::default()
-							.header(c_filename)
+							.header(src_filename)
 							.parse_callbacks(Box::new(CargoCallbacks));
 						let builder = (self.
 							bindgen_builder_hook
@@ -842,18 +1005,18 @@ impl<'a> Config<'a>
 						let bindings = builder.generate()?;
 						bindings.write_to_file(&binding_pathbuf)?;
 						built_something = true;
-						results.c_header_rust_binding_files.push(
-							HeaderBinding::new(c_source_pathbuf, binding_pathbuf));
+						results.header_bindings.push(
+							HeaderBinding::from((src_fn_pathbuf, binding_pathbuf)));
 					},
-					FileExtension::Unsupported(_) => {},
+					FileType::Unsupported(_) => {},
 				}
 			}
 		}
 
-		if c_source_found {
+		if !results.source_files.is_empty() {
 			let lib_name = self.lib_name.ok_or_else(
 				|| MldError::from(
-					"library name MUST be configured when at least one C source is configured"))?;
+					"library name MUST be configured when at least one cc source is configured"))?;
 			build.try_compile(lib_name)?;
 			built_something = true;
 			results.lib_name = Some(String::from(lib_name));
@@ -865,33 +1028,57 @@ impl<'a> Config<'a>
 
 		Ok(results)
 	}
+
+	/// Look up the [`FileType`] value matching the given extension.
+	fn find_filetype(&self, ext: Option<&OsStr>) -> FileType
+	{
+		match ext {
+			Some(ext_os) => {
+				match ext_os.to_str() {
+					Some(ext_str) => {
+						if self.cc_exts.iter().find(|x| {*x == ext_str}).is_some() {
+							FileType::Source
+						} else if self.bindgen_exts.iter().find(|x| {*x == ext_str}).is_some() {
+							FileType::Header
+						} else {
+							FileType::Unsupported(String::from(ext_str))
+						}
+					},
+					None => FileType::Unsupported("".to_string())
+				}
+			},
+			None => {
+				FileType::Unsupported("".to_string())
+			}
+		}
+	}
 }
 
 ///
-/// The pair of a C header file and the generated
+/// The pair of an input header file and the generated
 /// [Rust FFI](https://doc.rust-lang.org/nomicon/ffi.html) binding file,
 /// held in [`BuildResults`].
 ///
 #[derive(Debug)]
 pub struct HeaderBinding
 {
-	/// The C header file.
-	pub c_header_file: StdPathBuf,
+	/// The input header file.
+	pub input_header_file: StdPathBuf,
 	/// The [Rust FFI](https://doc.rust-lang.org/nomicon/ffi.html) binding
 	/// file.
 	pub rust_binding_file: StdPathBuf,
 }
 
-impl HeaderBinding
+impl From<(StdPathBuf, StdPathBuf)> for HeaderBinding
 {
-	/// Create the new [`HeaderBinding`] data for the given C header and
+	/// Create the new [`HeaderBinding`] data for the given input header and
 	/// [Rust FFI](https://doc.rust-lang.org/nomicon/ffi.html) binding file
 	/// pair.
-	fn new(c_header_file: StdPathBuf, rust_binding_file: StdPathBuf) -> HeaderBinding
+	fn from(paths: (StdPathBuf, StdPathBuf)) -> HeaderBinding
 	{
 		HeaderBinding {
-			c_header_file: c_header_file,
-			rust_binding_file: rust_binding_file,
+			input_header_file: paths.0,
+			rust_binding_file: paths.1,
 		}
 	}
 }
@@ -902,7 +1089,7 @@ impl Display for HeaderBinding
 	{
 		write!(f,
 			"({} -> {})",
-			self.c_header_file.display(),
+			self.input_header_file.display(),
 			self.rust_binding_file.display())
 	}
 }
@@ -921,23 +1108,23 @@ pub struct BuildResults
 	pub out_dir: StdPathBuf,
 	/// The library name, if generated.
 	pub lib_name: Option<String>,
-	/// The C source files.
-	pub c_source_files: Vec<StdPathBuf>,
-	/// The C header and generated
-	/// [Rust FFI](https://doc.rust-lang.org/nomicon/ffi.html) binding file pair.
-	pub c_header_rust_binding_files: Vec<HeaderBinding>,
+	/// The source files.
+	pub source_files: Vec<StdPathBuf>,
+	/// The header and generated
+	/// [Rust FFI](https://doc.rust-lang.org/nomicon/ffi.html) binding file pairs.
+	pub header_bindings: Vec<HeaderBinding>,
 }
 
 impl BuildResults
 {
-	/// Create the new [`HeaderBinding`] data.
+	/// Create the new [`BuildResults`] data.
 	fn new() -> BuildResults
 	{
 		BuildResults {
 			out_dir: StdPathBuf::from("."),
 			lib_name: None,
-			c_source_files: Vec::new(),
-			c_header_rust_binding_files: Vec::new(),
+			source_files: Vec::new(),
+			header_bindings: Vec::new(),
 		}
 	}
 }
@@ -947,11 +1134,11 @@ impl Display for BuildResults
 	fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), FmtError>
 	{
 		write!(f,
-			"(out_dir: {}, lib_name: {}, c_source_files: {}, c_header_rust_binding_files: {})",
+			"(out_dir: {}, lib_name: {}, source_files: {}, header_bindings: {})",
 			self.out_dir.display(),
 			(self.lib_name.as_ref()).unwrap_or(&("None".to_string())),
-			str_iter_to_string(self.c_source_files.iter().map(|path_buf| {path_buf.display()})),
-			str_iter_to_string(self.c_header_rust_binding_files.iter()))
+			str_iter_to_string(self.source_files.iter().map(|path_buf| {path_buf.display()})),
+			str_iter_to_string(self.header_bindings.iter()))
 	}
 }
 
@@ -986,63 +1173,27 @@ fn str_iter_to_string<T, IT>(iter: IT) -> String
 }
 
 ///
-/// The C source file extensions.
+/// The input file types.
 ///
 #[derive(Debug, PartialEq)]
-enum FileExtension
+enum FileType
 {
-	/// A C source file. (`*.c`)
-	C,
-	/// A C header file. (`*.h`)
-	H,
+	/// A source file for [`cc`].
+	Source,
+	/// A header file for [`bindgen`].
+	Header,
 	/// An unsupported extension.
 	Unsupported(String),
 }
 
-impl From<Option<&OsStr>> for FileExtension
-{
-	fn from(ext: Option<&OsStr>) -> Self
-	{
-		match ext {
-			Some(ext_os) => {
-				match ext_os.to_str() {
-					Some(ext_str) => {
-						if "c" == ext_str {
-							FileExtension::C
-						}
-						else if "h" == ext_str {
-							FileExtension::H
-						}
-						else {
-							FileExtension::Unsupported(String::from(ext_str))
-						}
-					},
-					None => FileExtension::Unsupported("".to_string())
-				}
-			},
-			None => {
-				FileExtension::Unsupported("".to_string())
-			}
-		}
-	}
-}
-
-impl From<&Path> for FileExtension
-{
-	fn from(path: &Path) -> Self
-	{
-		FileExtension::from(path.extension())
-	}
-}
-
-impl Display for FileExtension
+impl Display for FileType
 {
 	fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), FmtError>
 	{
 		match self {
-			FileExtension::C => write!(f, "FileExtension: C"),
-			FileExtension::H => write!(f, "FileExtension: H"),
-			FileExtension::Unsupported(ext) => write!(f, "FileExtension: Unsupported({})", ext),
+			FileType::Source => write!(f, "FileType: Source"),
+			FileType::Header => write!(f, "FileType: Header"),
+			FileType::Unsupported(ext) => write!(f, "FileType: Unsupported({})", ext),
 		}
 		
 	}

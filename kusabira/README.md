@@ -1,18 +1,9 @@
 # Introduction
-`kusabira` is the integrated C source build frontend for the
+`kusabira` is the integrated C/C++/assembly source build frontend for the
 [`Cargo`](https://doc.rust-lang.org/cargo/)
 [build script](https://doc.rust-lang.org/cargo/reference/build-scripts.html).
 
-# Features
-* Integrated C library building by `cc` and
-  [Rust FFI](https://doc.rust-lang.org/nomicon/ffi.html) binding generation
-  by `bindgen` as the backends.
-* Multiple C source and header files with the glob support by [`glob`].
-* Single-line configuration and build execution.
-* Cooperation with [`system_deps`] to integrate the system libraries.
-* [`Cargo`](https://doc.rust-lang.org/cargo/) metadata output to
-  `std::io::Stdout`.
-* Highly flexible backend configuration via the hooks.
+[`himetake`](../himetake) is the demo of this crate.
 
 # License
 This software is licensed under either or both of:
