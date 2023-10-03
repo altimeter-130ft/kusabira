@@ -44,7 +44,7 @@
 
 [package]
 name = "kusabira"
-version = "0.1.0-alpha0"
+version.workspace = true
 authors.workspace = true
 edition.workspace = true
 description = "Integrated frontend for C library build and Rust FFI binding generation"

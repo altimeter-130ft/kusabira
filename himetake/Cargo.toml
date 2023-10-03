@@ -44,7 +44,7 @@
 
 [package]
 name = "himetake"
-version = "0.1.0-alpha0"
+version.workspace = true
 authors.workspace = true
 edition.workspace = true
 description = "Demo application of kusabira mixing Rust and C"
