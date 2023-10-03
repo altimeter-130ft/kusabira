@@ -45,13 +45,15 @@
 [package]
 name = "himetake"
 version = "0.1.0-alpha0"
-authors = ["Seigo Tanimura <seigo.tanimura@gmail.com>"]
-edition = "2021"
+authors.workspace = true
+edition.workspace = true
 description = "Demo application of kusabira mixing Rust and C"
 readme = "README.md"
-license = "Apache-2.0 OR MIT"
+license.workspace = true
 keywords = ["cargo", "build-script", "cc", "bindgen", "demo"]
 categories = ["development-tools::build-utils", "development-tools::ffi"]
+homepage.workspace = true
+repository.workspace = true
 
 [build-dependencies]
 kusabira.workspace = true

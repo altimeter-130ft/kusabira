@@ -52,3 +52,10 @@ cc = "1.0"
 glob = "0.3"
 kusabira = { path = "kusabira", version = "0.1.0-alpha0" }
 system-deps = "6.1"
+
+[workspace.package]
+authors = ["Seigo Tanimura <seigo.tanimura@gmail.com>"]
+edition = "2021"
+license = "Apache-2.0 OR MIT"
+homepage = "https://github.com/altimeter-130ft/kusabira"
+repository = "https://github.com/altimeter-130ft/kusabira.git"

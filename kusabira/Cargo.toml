@@ -45,13 +45,15 @@
 [package]
 name = "kusabira"
 version = "0.1.0-alpha0"
-authors = ["Seigo Tanimura <seigo.tanimura@gmail.com>"]
-edition = "2021"
+authors.workspace = true
+edition.workspace = true
 description = "Integrated frontend for C library build and Rust FFI binding generation"
 readme = "README.md"
-license = "Apache-2.0 OR MIT"
+license.workspace = true
 keywords = ["cargo", "build-script", "cc", "bindgen"]
 categories = ["development-tools::build-utils", "development-tools::ffi"]
+homepage.workspace = true
+repository.workspace = true
 
 [dependencies]
 bindgen.workspace = true
