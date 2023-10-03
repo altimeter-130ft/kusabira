@@ -42,6 +42,10 @@
 // SOFTWARE.
 //
 
+//!
+//! The `main` crate.
+//!
+
 #![deny(rustdoc::missing_crate_level_docs)]
 #![deny(missing_docs)]
 
