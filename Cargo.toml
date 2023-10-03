@@ -50,11 +50,11 @@ resolver = "2"
 bindgen = "0.68"
 cc = "1.0"
 glob = "0.3"
-kusabira = { path = "kusabira", version = "0.1.0-alpha0" }
+kusabira = { path = "kusabira", version = "0.1" }
 system-deps = "6.1"
 
 [workspace.package]
-version = "0.1.0-alpha1"
+version = "0.1.0"
 authors = ["Seigo Tanimura <seigo.tanimura@gmail.com>"]
 edition = "2021"
 license = "Apache-2.0 OR MIT"
