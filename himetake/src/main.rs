@@ -47,6 +47,11 @@
 
 use himetake::do_demo;
 
+///
+/// The `main` function.
+///
+/// Simply call [`himetake::do_demo`].
+///
 fn main()
 {
 	do_demo();

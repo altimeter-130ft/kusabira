@@ -54,6 +54,7 @@ kusabira = { path = "kusabira", version = "0.1.0-alpha0" }
 system-deps = "6.1"
 
 [workspace.package]
+version = "0.1.0-alpha1"
 authors = ["Seigo Tanimura <seigo.tanimura@gmail.com>"]
 edition = "2021"
 license = "Apache-2.0 OR MIT"
