@@ -907,8 +907,15 @@ impl<'a> Config<'a>
 	///
 	/// # Example
 	/// Below is the build script excerpt of
-	/// [`himetake`](../../himetake/index.html) version 0.1.0, modified
-	/// slightly for the better understanding:
+	/// `himetake`, modified slightly for the better understanding.
+	/// > The document of `himetake`, as of version 0.1.0, is not published on
+	/// > [`crates.io`](https://crates.io/) for an unknown reason.
+	/// >
+	/// > For the actual implementation, please download the
+	/// > [`Cargo`](https://doc.rust-lang.org/cargo/) workspace source from
+	/// > [the GitHub repository](https://github.com/altimeter-130ft/kusabira)
+	/// > and build the document by
+	/// > [`cargo doc`](https://doc.rust-lang.org/cargo/commands/cargo-doc.html).
 	/// ```no_run
 	/// use kusabira::builder::Config as MldBuilderConfig;
 	/// use kusabira::hooks::cc::warnings_into_errors;
